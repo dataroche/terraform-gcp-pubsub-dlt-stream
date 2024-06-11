@@ -5,7 +5,8 @@
 
 # Note, after a name db instance is used, it cannot be reused for up to one week.
 variable "pubsub_dlt_stream_env" {
-    description = "The execution environment for the pubsub-dlt-stream project - I.e.
+    description = <<EOT
+    The execution environment for the pubsub-dlt-stream project - I.e.
     
     DESTINATION_NAME=postgres
     DESTINATION__POSTGRES__CREDENTIALS=postgresql://user:password@10.109.144.1:5432/db
@@ -15,7 +16,7 @@ variable "pubsub_dlt_stream_env" {
     PUBSUB_INPUT_SUBSCRIPTION=projects/{PROJECT}/subscriptions/{SUBSCRIPTION_NAME}
     TABLE_NAME_DATA_KEY=eventName
     TABLE_NAME_PREFIX=raw_events_
-    "
+    EOT
     type = map(string)
 }
 
