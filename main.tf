@@ -34,7 +34,7 @@ data "google_compute_image" "debian" {
 }
 
 resource "google_compute_instance_template" "pubsub_dlt_stream" {
-  name        = "instance-template"
+  name_prefix = "pubsub-dlt-stream-"
   description = "This template is used to create pubsub-dlt-stream instances"
 
   // the `gce-container-declaration` key is very important
@@ -50,8 +50,8 @@ resource "google_compute_instance_template" "pubsub_dlt_stream" {
 
   scheduling {
     preemptible         = var.preemptible
-    automatic_restart   = true
-    on_host_maintenance = "MIGRATE"
+    automatic_restart   = !var.preemptible
+    on_host_maintenance = var.preemptible ? "TERMINATE" : "MIGRATE"
   }
 
   // Create a new boot disk from an image
@@ -85,4 +85,20 @@ resource "google_compute_region_instance_group_manager" "pubsub_dlt_stream" {
   base_instance_name = "pubsub-dlt-stream"
   region             = var.google_region
   target_size        = var.target_size
+}
+
+resource "google_compute_region_autoscaler" "pubsub_dlt_stream" {
+  name   = "pubsub-dlt-stream-autoscaler"
+  region = var.google_region
+  target = google_compute_region_instance_group_manager.pubsub_dlt_stream.id
+
+  autoscaling_policy {
+    max_replicas    = var.autoscale_max_replicas
+    min_replicas    = var.autoscale_min_replicas
+    cooldown_period = 60
+
+    cpu_utilization {
+      target = 0.5
+    }
+  }
 }

@@ -55,6 +55,18 @@ variable "preemptible" {
 
 variable "target_size" {
   description = "The initial instance group size"
-  type        = string
-  default     = "1"
+  type        = number
+  default     = 1
+}
+
+variable "autoscale_min_replicas" {
+  description = "The min instance group size"
+  type        = number
+  default     = 1
+}
+
+variable "autoscale_max_replicas" {
+  description = "The max instance group size"
+  type        = number
+  default     = 5
 }
