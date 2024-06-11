@@ -1,11 +1,11 @@
-
+data "google_project" "project" {}
 
 module "container" {
   source = "terraform-google-modules/container-vm/google"
   version = "~> 3.0"
 
   container = {
-    image="gcr.io/dataroc/pubsub-dlt-stream:${var.tag}"
+    image="dataroc/pubsub-dlt-stream:${var.tag}"
     securityContext = {
       privileged : true
     }
@@ -28,18 +28,15 @@ module "container" {
   restart_policy = "Always"
 }
 
-data "google_compute_image" "debian" {
-  family  = "debian-11"
-  project = "debian-cloud"
-}
-
 resource "google_compute_instance_template" "pubsub_dlt_stream" {
   name_prefix = "pubsub-dlt-stream-"
   description = "This template is used to create pubsub-dlt-stream instances"
 
   // the `gce-container-declaration` key is very important
   metadata = {
-    "gce-container-declaration" = module.container.metadata_value
+    gce-container-declaration = module.container.metadata_value
+    google-logging-enabled    = "true"
+    google-monitoring-enabled = "true"
   }
   labels = {
     "container-vm" = module.container.vm_container_label
@@ -56,7 +53,7 @@ resource "google_compute_instance_template" "pubsub_dlt_stream" {
 
   // Create a new boot disk from an image
   disk {
-    source_image      = data.google_compute_image.debian.self_link
+    source_image      = module.container.source_image
     auto_delete       = true
     boot              = true
     disk_type         = "pd-balanced"
@@ -78,13 +75,25 @@ resource "google_compute_instance_template" "pubsub_dlt_stream" {
 }
 
 resource "google_compute_region_instance_group_manager" "pubsub_dlt_stream" {
-  name               = "pubsub-dlt-stream"
+  provider = google-beta
+  project = data.google_project.project.project_id
+  name               = "pubsub-dlt-stream-group-manager"
   version {
     instance_template = google_compute_instance_template.pubsub_dlt_stream.self_link_unique
   }
   base_instance_name = "pubsub-dlt-stream"
   region             = var.google_region
   target_size        = var.target_size
+
+  update_policy {
+    type                           = "PROACTIVE"
+    instance_redistribution_type   = "PROACTIVE"
+    minimal_action                 = "REPLACE"
+    most_disruptive_allowed_action = "REPLACE"
+    max_surge_fixed                = 10
+    min_ready_sec                  = 50
+    replacement_method             = "SUBSTITUTE"
+  }
 }
 
 resource "google_compute_region_autoscaler" "pubsub_dlt_stream" {
