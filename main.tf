@@ -2,7 +2,7 @@
 
 module "container" {
   source = "terraform-google-modules/container-vm/google"
-  version = "~> 2.0"
+  version = "~> 3.0"
 
   container = {
     image="gcr.io/dataroc/pubsub-dlt-stream:${var.tag}"
@@ -10,13 +10,12 @@ module "container" {
       privileged : true
     }
     tty : true
-    dynamic "env" {
-      for_each = var.pubsub_dlt_stream_env
-      content {
-        name  = env.key
-        value = env.value
+    env = [
+      for key, value in var.pubsub_dlt_stream_env : {
+        name  = key
+        value = value
       }
-    }
+    ]
 
     # Declare volumes to be mounted.
     # This is similar to how docker volumes are declared.
@@ -63,6 +62,10 @@ resource "google_compute_instance_template" "pubsub_dlt_stream" {
     disk_type         = "pd-balanced"
     disk_size_gb      = 10
   }
+  
+  network_interface {
+    network = "default"
+  }
 
   service_account {
     email  = var.service_account_email
@@ -74,10 +77,12 @@ resource "google_compute_instance_template" "pubsub_dlt_stream" {
   }
 }
 
-resource "google_compute_instance_group_manager" "pubsub_dlt_stream" {
+resource "google_compute_region_instance_group_manager" "pubsub_dlt_stream" {
   name               = "pubsub-dlt-stream"
-  instance_template  = google_compute_instance_template.pubsub_dlt_stream.id
+  version {
+    instance_template = google_compute_instance_template.pubsub_dlt_stream.self_link_unique
+  }
   base_instance_name = "pubsub-dlt-stream"
-  zone               = var.google_region
+  region             = var.google_region
   target_size        = var.target_size
 }
