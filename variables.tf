@@ -55,5 +55,5 @@ variable "preemptible" {
 variable "target_size" {
   description = "The initial instance group size"
   type        = string
-  default     = "1""
+  default     = "1"
 }
