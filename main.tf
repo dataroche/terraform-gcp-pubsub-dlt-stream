@@ -76,7 +76,7 @@ resource "google_compute_instance_template" "pubsub_dlt_stream" {
 
 module "mig_template" {
   source               = "terraform-google-modules/vm/google//modules/instance_template"
-  version              = "~> 7.3"
+  version              = "~> 11"
   network              = "default"
   service_account      = var.service_account_email
   name_prefix          = "pubsub-dlt-stream-"
