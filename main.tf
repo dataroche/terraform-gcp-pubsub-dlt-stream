@@ -4,9 +4,12 @@ module "container" {
   source = "terraform-google-modules/container-vm/google"
   version = "~> 3.0"
 
+  # The latest COS image 113 seems to have disabled support for logging with the google-logging-enabled label
+  cos_image_name="cos-stable-109-17800-66-43"
+
   container = {
-    // image="us-docker.pkg.dev/silent-repost-be-staging/pubsub-dlt-stream-test/pubsub-dlt-stream:latest"
-    image="registry.hub.docker.com/dataroc/pubsub-dlt-stream:${var.tag}"
+    image="registry.hub.docker.com/dataroc/pubsub-dlt-stream:${var.tag}"=
+
     env = [
       for key, value in var.pubsub_dlt_stream_env : {
         name  = key
@@ -25,7 +28,6 @@ module "container" {
   restart_policy = "Always"
 }
 
-/**
 resource "google_compute_instance_template" "pubsub_dlt_stream" {
   name_prefix = "pubsub-dlt-stream-"
   description = "This template is used to create pubsub-dlt-stream instances"
@@ -72,34 +74,14 @@ resource "google_compute_instance_template" "pubsub_dlt_stream" {
     create_before_destroy = true
   }
 }
-*/
 
-module "mig_template" {
-  source               = "terraform-google-modules/vm/google//modules/instance_template"
-  version              = "~> 11"
-  network              = "default"
-  service_account      = var.service_account_email
-  name_prefix          = "pubsub-dlt-stream-"
-  source_image_family  = "cos-stable"
-  source_image_project = "cos-cloud"
-  source_image         = reverse(split("/", module.container.source_image))[0]
-  
-  metadata = {
-    gce-container-declaration = module.container.metadata_value
-    google-logging-enabled    = "true"
-    google-monitoring-enabled = "true"
-  }
-  labels = {
-    "container-vm" = module.container.vm_container_label
-  }
-}
 
 resource "google_compute_region_instance_group_manager" "pubsub_dlt_stream" {
   provider = google-beta
   project = data.google_project.project.project_id
   name               = "pubsub-dlt-stream-group-manager"
   version {
-    instance_template = module.mig_template.self_link
+    instance_template = google_compute_instance_template.pubsub_dlt_stream.self_link_unique
   }
   base_instance_name = "pubsub-dlt-stream"
   region             = var.google_region
