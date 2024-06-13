@@ -5,10 +5,10 @@ module "container" {
   version = "~> 3.0"
 
   # The latest COS image 113 seems to have disabled support for logging with the google-logging-enabled label
-  cos_image_name="cos-stable-109-17800-66-43"
+  cos_image_name = "cos-stable-109-17800-66-43"
 
   container = {
-    image="registry.hub.docker.com/dataroc/pubsub-dlt-stream:${var.tag}"=
+    image = "registry.hub.docker.com/dataroc/pubsub-dlt-stream:${var.tag}"
 
     env = [
       for key, value in var.pubsub_dlt_stream_env : {
