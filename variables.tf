@@ -53,12 +53,6 @@ variable "preemptible" {
     default = false
 }
 
-variable "target_size" {
-  description = "The initial instance group size"
-  type        = number
-  default     = 1
-}
-
 variable "autoscale_min_replicas" {
   description = "The min instance group size"
   type        = number

@@ -85,7 +85,6 @@ resource "google_compute_region_instance_group_manager" "pubsub_dlt_stream" {
   }
   base_instance_name = "pubsub-dlt-stream"
   region             = var.google_region
-  target_size        = var.target_size
 
   update_policy {
     type                           = "PROACTIVE"
